@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ochom/pubsub"
-	"github.com/streadway/amqp"
 )
 
 // Here we set the way error messages are displayed in the terminal.
@@ -16,11 +15,6 @@ func failOnError(err error, msg string) {
 	if err != nil {
 		log.Fatalf("%s: %s", msg, err)
 	}
-}
-
-func send(ch *amqp.Channel, body []byte, delay int64) error {
-
-	return nil
 }
 
 func main() {
