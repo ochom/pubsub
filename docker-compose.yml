@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    build: https://${GITHUB_TOKEN}@github.com/ochom/pubsub.git#main
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - ./data:/var/lib/rabbitmq
