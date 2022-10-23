@@ -141,7 +141,6 @@ func (r *Rabbit) handleDisconnect() {
 			}
 		case <-r.quitChann:
 			r.conn.Close()
-			log.Println("...rabbitMQ has been shut down")
 			r.quitChann <- true
 			return
 		}
@@ -159,9 +158,6 @@ func (r *Rabbit) handleDisconnect() {
 // Shutdown closes rabbitmq's connection
 func (r *Rabbit) Shutdown() {
 	r.quitChann <- true
-
-	log.Println("shutting down rabbitMQ's connection...")
-
 	<-r.quitChann
 }
 
