@@ -34,7 +34,7 @@ func (r *Rabbit) Consume(consumer *Consumer) error {
 		for d := range msgs {
 			if err := consumer.CallBack(consumer.Worker, d.Body); err == nil {
 				if !consumer.AutoAck {
-					d.Ack(false)
+					_ = d.Ack(false)
 				}
 			}
 		}

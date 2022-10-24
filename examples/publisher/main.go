@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 
@@ -34,9 +33,7 @@ func main() {
 	r := pubsub.NewRabbit(rabbitURL, exchangeName, queueName)
 
 	for i := 0; i < 20; i++ {
-		// random delay
-		myDelay := rand.Intn(100) + delay
-
+		myDelay := delay + i
 		data := fmt.Sprintf(`{"message": "%s", "job": %d, "delay": %d}`, message, i, myDelay)
 		err := r.PublishWithDelay([]byte(data), int64(myDelay))
 		if err != nil {
