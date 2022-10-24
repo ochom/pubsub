@@ -5,7 +5,7 @@ name: Deploy
       - main
 
 env:
-  IMAGE_NAME: ochom/orctic-api:latest
+  IMAGE_NAME: ochom/rabbit-delayed-messages:latest
   CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
 
 jobs:
