@@ -20,19 +20,18 @@ func failOnError(err error, msg string) {
 func main() {
 	// Let's catch the message from the terminal.
 	reader := bufio.NewReader(os.Stdin)
-	for {
-		conf := pubsub.DefaultConfig()
-		r, err := pubsub.NewRabbit(conf)
-		failOnError(err, "Failed to connect to RabbitMQ")
-		defer r.Shutdown()
 
-		fmt.Println("What message do you want to send?")
-		mPayload, _ := reader.ReadString('\n')
-		data := fmt.Sprintf(`{"payload": "%s"}`, strings.ReplaceAll(mPayload, "\n", ""))
+	conf := pubsub.DefaultConfig()
+	r, err := pubsub.NewRabbit(conf)
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer r.Shutdown()
 
-		err = r.PublishWithDelay([]byte(data), 5000)
-		failOnError(err, "Failed to publish a message")
+	fmt.Println("What message do you want to send?")
+	mPayload, _ := reader.ReadString('\n')
+	data := fmt.Sprintf(`{"payload": "%s"}`, strings.ReplaceAll(mPayload, "\n", ""))
 
-		log.Printf(" [x] Congrats, sending message: %s", mPayload)
-	}
+	err = r.PublishWithDelay([]byte(data), 5000)
+	failOnError(err, "Failed to publish a message")
+
+	log.Printf(" [x] Congrats, sending message: %s", mPayload)
 }
