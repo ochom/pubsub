@@ -140,7 +140,7 @@ func (r *Rabbit) handleDisconnect() {
 				log.Printf("error: rabbitMQ disconnection: %v", errChann)
 			}
 		case <-r.quitChann:
-			r.conn.Close()
+			_ = r.conn.Close()
 			r.quitChann <- true
 			return
 		}
