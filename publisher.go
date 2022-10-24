@@ -1,7 +1,10 @@
 package pubsub
 
 import (
-	"github.com/streadway/amqp"
+	"context"
+	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // Publish publish a message that will be consumed immediately
@@ -32,8 +35,11 @@ func (r *Rabbit) publish(body []byte, delay int64) error {
 		headers["x-delay"] = delay * 1000 // convert to milliseconds
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	// publish message to exchange
-	err = ch.Publish(
+	err = ch.PublishWithContext(ctx,
 		r.exchangeName, // exchange
 		r.queueName,    // routing key
 		false,          // mandatory
