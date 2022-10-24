@@ -1,6 +1,6 @@
 SHELL=/bin/bash
-producer:
-	go run "publisher/main.go"
 
-subscriber:
-	go run "consumer/main.go"
+dev:
+	@echo "Building dev ..."
+	@go build -o build/pub examples/publisher/main.go
+	@go build -o build/sub examples/consumer/main.go
