@@ -3,7 +3,7 @@ package pubsub
 import (
 	"fmt"
 
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
@@ -13,6 +13,11 @@ func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
 	}
 
 	ch, err := conn.Channel()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = ch.Qos(1, 0, false) // fair dispatch
 	if err != nil {
 		return nil, nil, err
 	}
