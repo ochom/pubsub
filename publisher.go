@@ -1,6 +1,8 @@
 package pubsub
 
-import "github.com/streadway/amqp"
+import (
+	"github.com/streadway/amqp"
+)
 
 // Publish publish a message that will be consumed immediately
 func (r *Rabbit) Publish(body []byte) error {
