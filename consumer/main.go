@@ -2,33 +2,42 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/ochom/pubsub"
 )
 
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
+func processMessage(worker int, b []byte) error {
+	log.Printf("Worker %d: %s", worker, string(b))
+	return nil
 }
 
 func main() {
-	conf := pubsub.DefaultConfig()
-	r, err := pubsub.NewRabbit(conf)
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer r.Shutdown()
 
-	msgs, err := r.Consume()
-	failOnError(err, "Failed to register a consumer")
+	rabbitURL := os.Getenv("RABBIT_URL")
+	exchangeName := os.Getenv("RABBIT_EXCHANGE")
+	queueName := os.Getenv("RABBIT_QUEUE")
 
-	forever := make(chan bool)
+	r := pubsub.NewRabbit(rabbitURL, exchangeName, queueName)
 
-	go func() {
-		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
-		}
-	}()
+	exit := make(chan bool)
 
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever
+	workers := 5
+	for i := 0; i < workers; i++ {
+		go func(worker int) {
+			consumer := &pubsub.Consumer{
+				Worker:   worker,
+				Exit:     exit,
+				AutoAck:  true,
+				CallBack: processMessage,
+			}
+
+			err := r.Consume(consumer)
+			if err != nil {
+				log.Fatalf("Failed to consume a message: %s", err)
+			}
+		}(i)
+	}
+
+	<-exit
 }

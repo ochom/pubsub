@@ -1,37 +1,48 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
-	"strings"
+	"strconv"
 
 	"github.com/ochom/pubsub"
 )
 
-// Here we set the way error messages are displayed in the terminal.
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
+func fromArgs(args []string) (string, int) {
+	if len(args) != 3 {
+		log.Fatalf("Usage: %s [message] [delay]", os.Args[0])
 	}
+
+	delay, err := strconv.Atoi(args[2])
+	if err != nil {
+		log.Fatalf("Invalid delay: %s", args[2])
+	}
+
+	return args[1], delay
 }
 
 func main() {
-	// Let's catch the message from the terminal.
-	reader := bufio.NewReader(os.Stdin)
 
-	conf := pubsub.DefaultConfig()
-	r, err := pubsub.NewRabbit(conf)
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer r.Shutdown()
+	message, delay := fromArgs(os.Args)
 
-	fmt.Println("What message do you want to send?")
-	mPayload, _ := reader.ReadString('\n')
-	data := fmt.Sprintf(`{"payload": "%s"}`, strings.ReplaceAll(mPayload, "\n", ""))
+	rabbitURL := os.Getenv("RABBIT_URL")
+	exchangeName := os.Getenv("RABBIT_EXCHANGE")
+	queueName := os.Getenv("RABBIT_QUEUE")
 
-	err = r.PublishWithDelay([]byte(data), 5000)
-	failOnError(err, "Failed to publish a message")
+	r := pubsub.NewRabbit(rabbitURL, exchangeName, queueName)
 
-	log.Printf(" [x] Congrats, sending message: %s", mPayload)
+	for i := 0; i < 20; i++ {
+		// random delay
+		myDelay := rand.Intn(100) + delay
+
+		data := fmt.Sprintf(`{"message": "%s", "job": %d, "delay": %d}`, message, i, myDelay)
+		err := r.PublishWithDelay([]byte(data), int64(myDelay))
+		if err != nil {
+			log.Fatalf("Failed to publish a message: %s", err)
+		}
+	}
+
+	log.Printf("All Message published")
 }

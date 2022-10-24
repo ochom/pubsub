@@ -1,7 +1,7 @@
 version: "3.7"
 services:
-  rabbitmq:
-    container_name: rabbitmq
+  pubsub:
+    container_name: pubsub
     build: https://github.com/ochom/pubsub.git#main
     ports:
       - 5672:5672
