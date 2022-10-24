@@ -1,5 +1,4 @@
 data
 *.sh
 *.base64
-pub
-sub
+build

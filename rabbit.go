@@ -2,7 +2,6 @@ package pubsub
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/streadway/amqp"
 )
@@ -91,91 +90,4 @@ func NewRabbit(url, exchangeName, queueName string) *Rabbit {
 	}
 
 	return &r
-}
-
-// Publish publish a message that will be consumed immediately
-func (r *Rabbit) Publish(body []byte) error {
-	return r.publish(body, 0)
-}
-
-// PublishWithDelay publish a message with delay in seconds
-func (r *Rabbit) PublishWithDelay(body []byte, delay int64) error {
-	return r.publish(body, delay)
-}
-
-func (r *Rabbit) publish(body []byte, delay int64) error {
-	conn, ch, err := initQ(r.connectionURL)
-	if err != nil {
-		return err
-	}
-	defer ch.Close()
-	defer conn.Close()
-
-	err = r.initPubSub(ch)
-	if err != nil {
-		return err
-	}
-
-	headers := map[string]any{}
-	if delay != 0 {
-		headers["x-delay"] = delay * 1000 // convert to milliseconds
-	}
-
-	// publish message to exchange
-	err = ch.Publish(
-		r.exchangeName, // exchange
-		r.queueName,    // routing key
-		false,          // mandatory
-		false,          // immediate
-		amqp.Publishing{
-			ContentType:  "application/json",
-			Body:         body,
-			DeliveryMode: amqp.Persistent,
-			Headers:      headers,
-		},
-	)
-	return err
-}
-
-// Consume consumes messages from the queue
-// autoAck: true if the server should consider messages acknowledged once delivered; false if the server should expect explicit acknowledgements
-func (r *Rabbit) Consume(consumer *Consumer) error {
-	conn, ch, err := initQ(r.connectionURL)
-	if err != nil {
-		return err
-	}
-	defer ch.Close()
-	defer conn.Close()
-
-	err = r.initPubSub(ch)
-	if err != nil {
-		return err
-	}
-
-	msgs, err := ch.Consume(
-		r.queueName,      // queue
-		"",               // consumer
-		consumer.AutoAck, // auto-ack
-		false,            // exclusive
-		false,            // no-local
-		false,            // no-wait
-		nil,              // args
-	)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		for d := range msgs {
-			if err := consumer.CallBack(consumer.Worker, d.Body); err == nil {
-				if !consumer.AutoAck {
-					d.Ack(false)
-				}
-			}
-		}
-	}()
-
-	log.Printf("Consumer: %d [*] Waiting for messages. To exit press CTRL+C", consumer.Worker)
-	<-consumer.Exit
-	return nil
 }
