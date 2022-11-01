@@ -40,7 +40,7 @@ func (r *Rabbit) Consume(consumer *Consumer) error {
 		}
 	}()
 
-	log.Printf("Consumer: %d [*] Waiting for messages. To exit press CTRL+C", consumer.Worker)
+	log.Printf("Consumer: %d [*] Created", consumer.Worker)
 	<-consumer.Exit
 	return nil
 }

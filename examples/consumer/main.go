@@ -39,5 +39,6 @@ func main() {
 		}(i)
 	}
 
+	log.Printf("Consumers: %d [*] Waiting for messages. To exit press CTRL+C", workers)
 	<-exit
 }
