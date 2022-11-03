@@ -1,7 +1,5 @@
 package pubsub
 
-import "log"
-
 // Consume consumes messages from the queue
 // autoAck: true if the server should consider messages acknowledged once delivered; false if the server should expect explicit acknowledgements
 func (r *Rabbit) Consume(consumer *Consumer) error {
@@ -40,7 +38,6 @@ func (r *Rabbit) Consume(consumer *Consumer) error {
 		}
 	}()
 
-	log.Printf("Consumer: %d [*] registered", consumer.Worker)
 	<-consumer.Exit
 	return nil
 }
