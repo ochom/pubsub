@@ -18,7 +18,7 @@ func main() {
 	exchangeName := os.Getenv("RABBIT_EXCHANGE")
 	queueName := os.Getenv("RABBIT_QUEUE")
 
-	r := pubsub.NewRabbit(rabbitURL, exchangeName, queueName)
+	r := pubsub.NewRabbit(rabbitURL)
 
 	exit := make(chan bool)
 
@@ -26,10 +26,12 @@ func main() {
 	for i := 0; i < workers; i++ {
 		go func(worker int) {
 			consumer := &pubsub.Consumer{
-				Worker:   worker,
-				Exit:     exit,
-				AutoAck:  true,
-				CallBack: processMessage,
+				ExchangeName: exchangeName,
+				QueueName:    queueName,
+				Worker:       worker,
+				Exit:         exit,
+				AutoAck:      true,
+				CallBack:     processMessage,
 			}
 
 			err := r.Consume(consumer)

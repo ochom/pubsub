@@ -30,12 +30,17 @@ func main() {
 	exchangeName := os.Getenv("RABBIT_EXCHANGE")
 	queueName := os.Getenv("RABBIT_QUEUE")
 
-	r := pubsub.NewRabbit(rabbitURL, exchangeName, queueName)
+	r := pubsub.NewRabbit(rabbitURL)
 
 	for i := 0; i < 20; i++ {
-		myDelay := delay + i
-		data := fmt.Sprintf(`{"message": "%s", "job": %d, "delay": %d}`, message, i, myDelay)
-		err := r.PublishWithDelay([]byte(data), int64(myDelay))
+		cnt := &pubsub.Content{
+			ExchangeName: exchangeName,
+			QueueName:    queueName,
+			Body:         []byte(fmt.Sprintf("%s %d", message, delay)),
+			Delay:        int64(delay),
+		}
+
+		err := r.Publish(cnt)
 		if err != nil {
 			log.Fatalf("Failed to publish a message: %s", err)
 		}

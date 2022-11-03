@@ -6,6 +6,21 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+// Rabbit ...
+type Rabbit struct {
+	connectionURL string
+}
+
+// NewRabbit ...
+func NewRabbit(url string) *Rabbit {
+
+	r := Rabbit{
+		connectionURL: url,
+	}
+
+	return &r
+}
+
 func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
@@ -25,12 +40,12 @@ func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
 	return conn, ch, nil
 }
 
-func (r *Rabbit) initPubSub(ch *amqp.Channel) error {
+func (r *Rabbit) initPubSub(ch *amqp.Channel, exchangeName, queueName string) error {
 	// declare exchange
 	args := make(amqp.Table)
 	args["x-delayed-type"] = "direct"
 	err := ch.ExchangeDeclare(
-		r.exchangeName,      // name
+		exchangeName,        // name
 		"x-delayed-message", // type
 		true,                // durable
 		false,               // auto-deleted
@@ -44,12 +59,12 @@ func (r *Rabbit) initPubSub(ch *amqp.Channel) error {
 
 	// declare queue
 	q, err := ch.QueueDeclare(
-		r.queueName, // name
-		true,        // durable
-		false,       // delete when unused
-		false,       // exclusive
-		false,       // no-wait
-		nil,         // arguments
+		queueName, // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	if err != nil {
 		return fmt.Errorf("queue Declare: %s", err.Error())
@@ -57,9 +72,9 @@ func (r *Rabbit) initPubSub(ch *amqp.Channel) error {
 
 	// bind queue to exchange
 	err = ch.QueueBind(
-		q.Name,         // queue name
-		q.Name,         // routing key
-		r.exchangeName, // exchange
+		q.Name,       // queue name
+		q.Name,       // routing key
+		exchangeName, // exchange
 		false,
 		nil,
 	)
@@ -68,31 +83,4 @@ func (r *Rabbit) initPubSub(ch *amqp.Channel) error {
 	}
 
 	return nil
-}
-
-// Rabbit ...
-type Rabbit struct {
-	connectionURL string
-	exchangeName  string
-	queueName     string
-}
-
-// Consumer ...
-type Consumer struct {
-	Worker   int
-	Exit     chan bool
-	AutoAck  bool
-	CallBack func(int, []byte) error
-}
-
-// NewRabbit ...
-func NewRabbit(url, exchangeName, queueName string) *Rabbit {
-
-	r := Rabbit{
-		connectionURL: url,
-		exchangeName:  exchangeName,
-		queueName:     queueName,
-	}
-
-	return &r
 }

@@ -7,17 +7,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// Publish publish a message that will be consumed immediately
-func (r *Rabbit) Publish(body []byte) error {
-	return r.publish(body, 0)
-}
-
-// PublishWithDelay publish a message with delay in seconds
-func (r *Rabbit) PublishWithDelay(body []byte, delay int64) error {
-	return r.publish(body, delay)
-}
-
-func (r *Rabbit) publish(body []byte, delay int64) error {
+// Publish publish a message to the channels
+func (r *Rabbit) Publish(cnt *Content) error {
 	conn, ch, err := initQ(r.connectionURL)
 	if err != nil {
 		return err
@@ -25,14 +16,14 @@ func (r *Rabbit) publish(body []byte, delay int64) error {
 	defer ch.Close()
 	defer conn.Close()
 
-	err = r.initPubSub(ch)
+	err = r.initPubSub(ch, cnt.ExchangeName, cnt.QueueName)
 	if err != nil {
 		return err
 	}
 
 	headers := map[string]any{}
-	if delay != 0 {
-		headers["x-delay"] = delay * 1000 // convert to milliseconds
+	if cnt.Delay != 0 {
+		headers["x-delay"] = cnt.Delay * 1000 // convert to milliseconds
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -40,13 +31,13 @@ func (r *Rabbit) publish(body []byte, delay int64) error {
 
 	// publish message to exchange
 	err = ch.PublishWithContext(ctx,
-		r.exchangeName, // exchange
-		r.queueName,    // routing key
-		false,          // mandatory
-		false,          // immediate
+		cnt.ExchangeName, // exchange
+		cnt.QueueName,    // routing key
+		false,            // mandatory
+		false,            // immediate
 		amqp.Publishing{
 			ContentType:  "application/json",
-			Body:         body,
+			Body:         cnt.Body,
 			DeliveryMode: amqp.Persistent,
 			Headers:      headers,
 		},

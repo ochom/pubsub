@@ -12,19 +12,19 @@ func (r *Rabbit) Consume(consumer *Consumer) error {
 	defer ch.Close()
 	defer conn.Close()
 
-	err = r.initPubSub(ch)
+	err = r.initPubSub(ch, consumer.ExchangeName, consumer.QueueName)
 	if err != nil {
 		return err
 	}
 
 	msgs, err := ch.Consume(
-		r.queueName,      // queue
-		"",               // consumer
-		consumer.AutoAck, // auto-ack
-		false,            // exclusive
-		false,            // no-local
-		false,            // no-wait
-		nil,              // args
+		consumer.QueueName, // queue
+		"",                 // consumer
+		consumer.AutoAck,   // auto-ack
+		false,              // exclusive
+		false,              // no-local
+		false,              // no-wait
+		nil,                // args
 	)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (r *Rabbit) Consume(consumer *Consumer) error {
 		}
 	}()
 
-	log.Printf("Consumer: %d [*] Created", consumer.Worker)
+	log.Printf("Consumer: %d [*] registered", consumer.Worker)
 	<-consumer.Exit
 	return nil
 }
