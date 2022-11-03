@@ -1,7 +1,5 @@
 package pubsub
 
-import "log"
-
 // Consume consumes messages from the queue
 // autoAck: true if the server should consider messages acknowledged once delivered; false if the server should expect explicit acknowledgements
 func (r *Rabbit) Consume(consumer *Consumer) error {
@@ -12,19 +10,19 @@ func (r *Rabbit) Consume(consumer *Consumer) error {
 	defer ch.Close()
 	defer conn.Close()
 
-	err = r.initPubSub(ch)
+	err = r.initPubSub(ch, consumer.ExchangeName, consumer.QueueName)
 	if err != nil {
 		return err
 	}
 
 	msgs, err := ch.Consume(
-		r.queueName,      // queue
-		"",               // consumer
-		consumer.AutoAck, // auto-ack
-		false,            // exclusive
-		false,            // no-local
-		false,            // no-wait
-		nil,              // args
+		consumer.QueueName, // queue
+		"",                 // consumer
+		consumer.AutoAck,   // auto-ack
+		false,              // exclusive
+		false,              // no-local
+		false,              // no-wait
+		nil,                // args
 	)
 	if err != nil {
 		return err
@@ -40,7 +38,6 @@ func (r *Rabbit) Consume(consumer *Consumer) error {
 		}
 	}()
 
-	log.Printf("Consumer: %d [*] Created", consumer.Worker)
 	<-consumer.Exit
 	return nil
 }
