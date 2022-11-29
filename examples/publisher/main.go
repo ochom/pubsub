@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/ochom/pubsub"
 )
@@ -32,18 +33,20 @@ func main() {
 
 	r := pubsub.NewRabbit(rabbitURL)
 
-	for i := 0; i < 20; i++ {
-		cnt := &pubsub.Content{
-			ExchangeName: exchangeName,
-			QueueName:    queueName,
-			Body:         []byte(fmt.Sprintf("%s %d", message, delay)),
-			Delay:        int64(delay),
-		}
+	actualDelay := time.Duration(time.Second * time.Duration(delay))
 
-		err := r.Publish(cnt)
-		if err != nil {
-			log.Fatalf("Failed to publish a message: %s", err)
-		}
+	fmt.Printf("message will be published after %d milliseconds", actualDelay.Milliseconds())
+
+	cnt := &pubsub.Content{
+		ExchangeName: exchangeName,
+		QueueName:    queueName,
+		Body:         []byte(fmt.Sprintf("%s", message)),
+		Delay:        actualDelay,
+	}
+
+	err := r.Publish(cnt)
+	if err != nil {
+		log.Fatalf("Failed to publish a message: %s", err)
 	}
 
 	log.Printf("All Message published")

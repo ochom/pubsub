@@ -7,8 +7,8 @@ import (
 	"github.com/ochom/pubsub"
 )
 
-func processMessage(worker int, b []byte) error {
-	log.Printf("Worker %d: %s", worker, string(b))
+func processMessage(b []byte) error {
+	log.Printf("received a message: %s", string(b))
 	return nil
 }
 
@@ -28,7 +28,6 @@ func main() {
 			consumer := &pubsub.Consumer{
 				ExchangeName: exchangeName,
 				QueueName:    queueName,
-				Worker:       worker,
 				Exit:         exit,
 				AutoAck:      true,
 				CallBack:     processMessage,
