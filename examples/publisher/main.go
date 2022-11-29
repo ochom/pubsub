@@ -40,7 +40,7 @@ func main() {
 	cnt := &pubsub.Content{
 		ExchangeName: exchangeName,
 		QueueName:    queueName,
-		Body:         []byte(fmt.Sprintf("%s", message)),
+		Body:         []byte(message),
 		Delay:        actualDelay,
 	}
 
@@ -49,5 +49,5 @@ func main() {
 		log.Fatalf("Failed to publish a message: %s", err)
 	}
 
-	log.Printf("All Message published")
+	log.Println("All Message published")
 }
