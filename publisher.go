@@ -21,9 +21,8 @@ func (r *Rabbit) Publish(cnt *Content) error {
 		return err
 	}
 
-	headers := map[string]any{}
-	if cnt.Delay != 0 {
-		headers["x-delay"] = cnt.Delay * 1000 // convert to milliseconds
+	headers := map[string]any{
+		"x-delay": cnt.Delay.Milliseconds(),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

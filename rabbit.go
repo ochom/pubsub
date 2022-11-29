@@ -13,7 +13,9 @@ type Rabbit struct {
 
 // NewRabbit ...
 func NewRabbit(url string) *Rabbit {
-
+	if url == "" {
+		url = "amqp://guest:guest@localhost:5672/"
+	}
 	r := Rabbit{
 		connectionURL: url,
 	}
