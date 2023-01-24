@@ -3,7 +3,7 @@ services:
   pubsub:
     container_name: pubsub
     build: https://github.com/ochom/pubsub.git#main
-    restart: on-failure
+    restart: always
     ports:
       - 5672:5672
       - 15672:15672

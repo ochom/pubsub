@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ochom/pubsub"
+	"github.com/ochom/pubsub/examples"
 )
 
 func fromArgs(args []string) (string, int) {
@@ -27,26 +28,27 @@ func main() {
 
 	message, delay := fromArgs(os.Args)
 
-	rabbitURL := os.Getenv("RABBIT_URL")
-	exchangeName := os.Getenv("RABBIT_EXCHANGE")
-	queueName := os.Getenv("RABBIT_QUEUE")
+	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
+	exchangeName := examples.GetEnv("RABBIT_EXCHANGE", "test-exchange")
+	queueName := examples.GetEnv("RABBIT_QUEUE", "test-queue")
 
-	r := pubsub.NewRabbit(rabbitURL)
+	r := pubsub.NewClient(rabbitURL)
 
 	actualDelay := time.Duration(time.Second * time.Duration(delay))
 
-	fmt.Printf("message will be published after %d milliseconds", actualDelay.Milliseconds())
+	fmt.Printf("message will be published after %d ms\n", actualDelay.Milliseconds())
 
-	cnt := &pubsub.Content{
-		ExchangeName: exchangeName,
-		QueueName:    queueName,
-		Body:         []byte(message),
-		Delay:        actualDelay,
-	}
+	for i := 0; i < 20; i++ {
+		cnt := &pubsub.Content{
+			ExchangeName: exchangeName,
+			QueueName:    queueName,
+			Body:         []byte(message + fmt.Sprintf("%d", i)),
+			Delay:        actualDelay,
+		}
 
-	err := r.Publish(cnt)
-	if err != nil {
-		log.Fatalf("Failed to publish a message: %s", err)
+		if err := r.Publish(cnt); err != nil {
+			log.Fatalf("Failed to publish a message: %s", err)
+		}
 	}
 
 	log.Println("All Message published")

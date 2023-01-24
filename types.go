@@ -1,15 +1,8 @@
 package pubsub
 
-import "time"
-
-// Consumer ...
-type Consumer struct {
-	ExchangeName string
-	QueueName    string
-	Exit         chan bool
-	AutoAck      bool
-	CallBack     func([]byte) error
-}
+import (
+	"time"
+)
 
 // Content ...
 type Content struct {
@@ -17,4 +10,13 @@ type Content struct {
 	QueueName    string
 	Body         []byte
 	Delay        time.Duration
+}
+
+// Consumer ...
+type Consumer struct {
+	ExchangeName string
+	QueueName    string
+	AutoAck      bool
+	Messages     chan []byte
+	Exit         chan bool
 }
