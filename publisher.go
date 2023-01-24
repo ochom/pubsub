@@ -8,15 +8,15 @@ import (
 )
 
 // Publish publish a message to the channels
-func (r *Rabbit) Publish(cnt *Content) error {
-	conn, ch, err := initQ(r.connectionURL)
+func (c *Client) Publish(cnt *Content) error {
+	conn, ch, err := initQ(c.connectionURL)
 	if err != nil {
 		return err
 	}
 	defer ch.Close()
 	defer conn.Close()
 
-	err = r.initPubSub(ch, cnt.ExchangeName, cnt.QueueName)
+	err = c.initPubSub(ch, cnt.ExchangeName, cnt.QueueName)
 	if err != nil {
 		return err
 	}

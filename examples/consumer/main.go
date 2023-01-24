@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/ochom/pubsub"
+	"github.com/ochom/pubsub/examples"
 )
 
 func processMessage(b []byte) error {
@@ -14,32 +14,33 @@ func processMessage(b []byte) error {
 
 func main() {
 
-	rabbitURL := os.Getenv("RABBIT_URL")
-	exchangeName := os.Getenv("RABBIT_EXCHANGE")
-	queueName := os.Getenv("RABBIT_QUEUE")
+	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
+	exchangeName := examples.GetEnv("RABBIT_EXCHANGE", "test-exchange")
+	queueName := examples.GetEnv("RABBIT_QUEUE", "test-queue")
 
-	r := pubsub.NewRabbit(rabbitURL)
+	client := pubsub.NewClient(rabbitURL)
 
-	exit := make(chan bool)
-
-	workers := 5
-	for i := 0; i < workers; i++ {
-		go func(worker int) {
-			consumer := &pubsub.Consumer{
-				ExchangeName: exchangeName,
-				QueueName:    queueName,
-				Exit:         exit,
-				AutoAck:      true,
-				CallBack:     processMessage,
-			}
-
-			err := r.Consume(consumer)
-			if err != nil {
-				log.Fatalf("Failed to consume a message: %s", err)
-			}
-		}(i)
+	consumer := pubsub.Consumer{
+		ExchangeName: exchangeName,
+		QueueName:    queueName,
+		AutoAck:      true,
+		Messages:     make(chan []byte),
+		Exit:         make(chan bool),
 	}
 
-	log.Printf("Consumers: %d [*] Waiting for messages. To exit press CTRL+C", workers)
-	<-exit
+	client = client.WithConsumer(consumer)
+
+	go client.Consume()
+
+	// handle messages
+	go func() {
+		for msg := range consumer.Messages {
+			if err := processMessage(msg); err != nil {
+				log.Println("Error: ", err.Error())
+			}
+		}
+	}()
+
+	log.Println("[*] Waiting for messages. To exit press CTRL+C")
+	<-consumer.Exit
 }

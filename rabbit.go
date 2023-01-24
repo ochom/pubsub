@@ -2,25 +2,26 @@ package pubsub
 
 import (
 	"fmt"
+	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// Rabbit ...
-type Rabbit struct {
+// Client ...
+type Client struct {
 	connectionURL string
+	consumer      Consumer
 }
 
-// NewRabbit ...
-func NewRabbit(url string) *Rabbit {
+// NewClient ...
+func NewClient(url string) *Client {
 	if url == "" {
 		url = "amqp://guest:guest@localhost:5672/"
 	}
-	r := Rabbit{
+
+	return &Client{
 		connectionURL: url,
 	}
-
-	return &r
 }
 
 func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
@@ -42,7 +43,7 @@ func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
 	return conn, ch, nil
 }
 
-func (r *Rabbit) initPubSub(ch *amqp.Channel, exchangeName, queueName string) error {
+func (c *Client) initPubSub(ch *amqp.Channel, exchangeName, queueName string) error {
 	// declare exchange
 	args := make(amqp.Table)
 	args["x-delayed-type"] = "direct"
@@ -85,4 +86,49 @@ func (r *Rabbit) initPubSub(ch *amqp.Channel, exchangeName, queueName string) er
 	}
 
 	return nil
+}
+
+// WithConsumer ..
+func (c *Client) WithConsumer(consumer Consumer) *Client {
+	c.consumer = consumer
+	return c
+}
+
+// Consume ...
+func (c *Client) Consume() {
+	conn, ch, err := initQ(c.connectionURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer ch.Close()
+	defer conn.Close()
+
+	err = c.initPubSub(ch, c.consumer.ExchangeName, c.consumer.QueueName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	msgs, err := ch.Consume(
+		c.consumer.QueueName, // queue
+		"",                   // consumer
+		c.consumer.AutoAck,   // auto-ack
+		false,                // exclusive
+		false,                // no-local
+		false,                // no-wait
+		nil,                  // args
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// consume messages
+	go func() {
+		for d := range msgs {
+			c.consumer.Messages <- d.Body
+		}
+	}()
+
+	<-c.consumer.Exit
 }
