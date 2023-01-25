@@ -15,14 +15,11 @@ func processMessage(b []byte) error {
 func main() {
 
 	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
-	exchangeName := examples.GetEnv("RABBIT_EXCHANGE", "test-exchange")
-	queueName := examples.GetEnv("RABBIT_QUEUE", "test-queue")
-
 	client := pubsub.NewClient(rabbitURL)
 
 	consumer := pubsub.Consumer{
-		ExchangeName: exchangeName,
-		QueueName:    queueName,
+		ExchangeName: "test-exchange",
+		QueueName:    "test-queue",
 		AutoAck:      true,
 		Messages:     make(chan []byte),
 		Exit:         make(chan bool),
