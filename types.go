@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"os"
 	"time"
 )
 
@@ -18,5 +19,5 @@ type Consumer struct {
 	QueueName    string
 	AutoAck      bool
 	Messages     chan []byte
-	Exit         chan bool
+	Exit         chan os.Signal
 }
