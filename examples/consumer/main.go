@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
 
 	"github.com/ochom/pubsub"
 	"github.com/ochom/pubsub/examples"
@@ -22,7 +24,7 @@ func main() {
 		QueueName:    "test-queue",
 		AutoAck:      true,
 		Messages:     make(chan []byte),
-		Exit:         make(chan bool),
+		Exit:         make(chan os.Signal, 1),
 	}
 
 	client = client.WithConsumer(consumer)
@@ -39,5 +41,6 @@ func main() {
 	}()
 
 	log.Println("[*] Waiting for messages. To exit press CTRL+C")
+	signal.Notify(consumer.Exit)
 	<-consumer.Exit
 }
