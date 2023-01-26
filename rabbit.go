@@ -3,6 +3,7 @@ package pubsub
 import (
 	"fmt"
 	"log"
+	"os"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -10,7 +11,8 @@ import (
 // Client ...
 type Client struct {
 	connectionURL string
-	consumer      Consumer
+	consumers     []*Consumer
+	exit          chan os.Signal
 }
 
 // NewClient ...
@@ -88,9 +90,15 @@ func (c *Client) initPubSub(ch *amqp.Channel, exchangeName, queueName string) er
 	return nil
 }
 
+// WithExit ..
+func (c *Client) WithExit(exit chan os.Signal) *Client {
+	c.exit = exit
+	return c
+}
+
 // WithConsumer ..
-func (c *Client) WithConsumer(consumer Consumer) *Client {
-	c.consumer = consumer
+func (c *Client) WithConsumer(consumer *Consumer) *Client {
+	c.consumers = append(c.consumers, consumer)
 	return c
 }
 
@@ -104,19 +112,27 @@ func (c *Client) Consume() {
 	defer ch.Close()
 	defer conn.Close()
 
-	err = c.initPubSub(ch, c.consumer.ExchangeName, c.consumer.QueueName)
+	for _, consumer := range c.consumers {
+		go c.consume(ch, consumer)
+	}
+
+	<-c.exit
+}
+
+func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
+	err := c.initPubSub(ch, consumer.ExchangeName, consumer.QueueName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	msgs, err := ch.Consume(
-		c.consumer.QueueName, // queue
-		"",                   // consumer
-		c.consumer.AutoAck,   // auto-ack
-		false,                // exclusive
-		false,                // no-local
-		false,                // no-wait
-		nil,                  // args
+		consumer.QueueName, // queue
+		"",                 // consumer
+		consumer.AutoAck,   // auto-ack
+		false,              // exclusive
+		false,              // no-local
+		false,              // no-wait
+		nil,                // args
 	)
 
 	if err != nil {
@@ -124,11 +140,7 @@ func (c *Client) Consume() {
 	}
 
 	// consume messages
-	go func() {
-		for d := range msgs {
-			c.consumer.Messages <- d.Body
-		}
-	}()
-
-	<-c.consumer.Exit
+	for d := range msgs {
+		consumer.Receiver <- d.Body
+	}
 }

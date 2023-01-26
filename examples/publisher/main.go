@@ -40,7 +40,20 @@ func main() {
 		cnt := &pubsub.Content{
 			ExchangeName: "test-exchange",
 			QueueName:    "test-queue",
-			Body:         []byte(message + fmt.Sprintf("%d", i)),
+			Body:         []byte(fmt.Sprintf("test-queue %s %d", message, i)),
+			Delay:        actualDelay,
+		}
+
+		if err := client.Publish(cnt); err != nil {
+			log.Fatalf("Failed to publish a message: %s", err)
+		}
+	}
+
+	for i := 0; i < 20; i++ {
+		cnt := &pubsub.Content{
+			ExchangeName: "test-exchange",
+			QueueName:    "test-queue2",
+			Body:         []byte(fmt.Sprintf("test-queue2 %s %d", message, i)),
 			Delay:        actualDelay,
 		}
 

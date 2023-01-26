@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"os/signal"
 
 	"github.com/ochom/pubsub"
 	"github.com/ochom/pubsub/examples"
@@ -18,22 +17,40 @@ func main() {
 
 	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
 	client := pubsub.NewClient(rabbitURL)
+	exit := make(chan os.Signal, 1)
+	client = client.WithExit(exit)
 
-	consumer := pubsub.Consumer{
+	consumer := &pubsub.Consumer{
 		ExchangeName: "test-exchange",
 		QueueName:    "test-queue",
 		AutoAck:      true,
-		Messages:     make(chan []byte),
-		Exit:         make(chan os.Signal, 1),
+		Receiver:     make(chan []byte),
+	}
+
+	consumer2 := &pubsub.Consumer{
+		ExchangeName: "test-exchange",
+		QueueName:    "test-queue2",
+		AutoAck:      true,
+		Receiver:     make(chan []byte),
 	}
 
 	client = client.WithConsumer(consumer)
+	client = client.WithConsumer(consumer2)
 
 	go client.Consume()
 
 	// handle messages
 	go func() {
-		for msg := range consumer.Messages {
+		for msg := range consumer.Receiver {
+			if err := processMessage(msg); err != nil {
+				log.Println("Error: ", err.Error())
+			}
+		}
+	}()
+
+	// handle messages
+	go func() {
+		for msg := range consumer2.Receiver {
 			if err := processMessage(msg); err != nil {
 				log.Println("Error: ", err.Error())
 			}
@@ -41,6 +58,5 @@ func main() {
 	}()
 
 	log.Println("[*] Waiting for messages. To exit press CTRL+C")
-	signal.Notify(consumer.Exit)
-	<-consumer.Exit
+	<-exit
 }
