@@ -9,9 +9,10 @@ import (
 	"github.com/ochom/pubsub/examples"
 )
 
-func processMessage(b []byte) error {
-	log.Printf("received a message: %s", string(b))
-	return nil
+func processMessage(id int, jobs chan []byte) {
+	for b := range jobs {
+		log.Printf("worker: %d received a message: %s", id, string(b))
+	}
 }
 
 func main() {
@@ -27,14 +28,16 @@ func main() {
 		ExchangeName: "test-exchange",
 		QueueName:    "test-queue",
 		AutoAck:      true,
-		Receiver:     make(chan []byte),
+		Workers:      5,
+		Handler:      processMessage,
 	}
 
 	consumer2 := &pubsub.Consumer{
 		ExchangeName: "test-exchange",
 		QueueName:    "test-queue2",
 		AutoAck:      true,
-		Receiver:     make(chan []byte),
+		Workers:      5,
+		Handler:      processMessage,
 	}
 
 	consumers := []*pubsub.Consumer{consumer, consumer2}
@@ -43,16 +46,6 @@ func main() {
 
 	// register consumers
 	client.RegisterConsumers(consumers...)
-
-	for _, c := range consumers {
-		go func(c *pubsub.Consumer) {
-			for msg := range c.Receiver {
-				if err := processMessage(msg); err != nil {
-					log.Println("Error: ", err.Error())
-				}
-			}
-		}(c)
-	}
 
 	log.Println("[*] Waiting for messages. To exit press CTRL+C")
 	<-exit

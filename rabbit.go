@@ -143,8 +143,15 @@ func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
 		log.Fatal(err)
 	}
 
+	// create workers
+	receiver := make(chan []byte)
+
+	for i := 0; i < consumer.Workers; i++ {
+		go consumer.Handler(i, receiver)
+	}
+
 	// consume messages
-	for d := range msgs {
-		consumer.Receiver <- d.Body
+	for msg := range msgs {
+		receiver <- msg.Body
 	}
 }

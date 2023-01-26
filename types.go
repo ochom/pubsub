@@ -4,6 +4,9 @@ import (
 	"time"
 )
 
+// ConsumerName ...
+type ConsumerName string
+
 // Content ...
 type Content struct {
 	ExchangeName string
@@ -14,8 +17,10 @@ type Content struct {
 
 // Consumer ...
 type Consumer struct {
+	Name         ConsumerName
 	ExchangeName string
 	QueueName    string
 	AutoAck      bool
-	Receiver     chan []byte
+	Workers      int
+	Handler      func(id int, msg chan []byte)
 }
