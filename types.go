@@ -1,7 +1,6 @@
 package pubsub
 
 import (
-	"os"
 	"time"
 )
 
@@ -18,6 +17,5 @@ type Consumer struct {
 	ExchangeName string
 	QueueName    string
 	AutoAck      bool
-	Messages     chan []byte
-	Exit         chan os.Signal
+	Receiver     chan []byte
 }
