@@ -11,7 +11,7 @@ import (
 // Client ...
 type Client struct {
 	connectionURL string
-	consumers     []*Consumer
+	consumers     chan *Consumer
 	exit          chan os.Signal
 }
 
@@ -23,6 +23,7 @@ func NewClient(url string) *Client {
 
 	return &Client{
 		connectionURL: url,
+		consumers:     make(chan *Consumer),
 	}
 }
 
@@ -96,10 +97,11 @@ func (c *Client) WithExit(exit chan os.Signal) *Client {
 	return c
 }
 
-// WithConsumer ..
-func (c *Client) WithConsumer(consumer *Consumer) *Client {
-	c.consumers = append(c.consumers, consumer)
-	return c
+// RegisterConsumers ..
+func (c *Client) RegisterConsumers(consumers ...*Consumer) {
+	for _, consumer := range consumers {
+		c.consumers <- consumer
+	}
 }
 
 // Consume ...
@@ -109,14 +111,16 @@ func (c *Client) Consume() {
 		log.Fatal(err)
 	}
 
-	defer ch.Close()
-	defer conn.Close()
-
-	for _, consumer := range c.consumers {
-		go c.consume(ch, consumer)
+	for {
+		select {
+		case consumer := <-c.consumers:
+			go c.consume(ch, consumer)
+		case <-c.exit:
+			ch.Close()
+			conn.Close()
+			return
+		}
 	}
-
-	<-c.exit
 }
 
 func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
@@ -139,8 +143,15 @@ func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
 		log.Fatal(err)
 	}
 
+	// create workers
+	receiver := make(chan []byte)
+
+	for i := 0; i < consumer.Workers; i++ {
+		go consumer.Handler(i, receiver)
+	}
+
 	// consume messages
-	for d := range msgs {
-		consumer.Receiver <- d.Body
+	for msg := range msgs {
+		receiver <- msg.Body
 	}
 }

@@ -3,14 +3,16 @@ package main
 import (
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/ochom/pubsub"
 	"github.com/ochom/pubsub/examples"
 )
 
-func processMessage(b []byte) error {
-	log.Printf("received a message: %s", string(b))
-	return nil
+func processMessage(id int, jobs chan []byte) {
+	for b := range jobs {
+		log.Printf("worker: %d received a message: %s", id, string(b))
+	}
 }
 
 func main() {
@@ -18,44 +20,32 @@ func main() {
 	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
 	client := pubsub.NewClient(rabbitURL)
 	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt)
+
 	client = client.WithExit(exit)
 
 	consumer := &pubsub.Consumer{
 		ExchangeName: "test-exchange",
 		QueueName:    "test-queue",
 		AutoAck:      true,
-		Receiver:     make(chan []byte),
+		Workers:      5,
+		Handler:      processMessage,
 	}
 
 	consumer2 := &pubsub.Consumer{
 		ExchangeName: "test-exchange",
 		QueueName:    "test-queue2",
 		AutoAck:      true,
-		Receiver:     make(chan []byte),
+		Workers:      5,
+		Handler:      processMessage,
 	}
 
-	client = client.WithConsumer(consumer)
-	client = client.WithConsumer(consumer2)
+	consumers := []*pubsub.Consumer{consumer, consumer2}
 
 	go client.Consume()
 
-	// handle messages
-	go func() {
-		for msg := range consumer.Receiver {
-			if err := processMessage(msg); err != nil {
-				log.Println("Error: ", err.Error())
-			}
-		}
-	}()
-
-	// handle messages
-	go func() {
-		for msg := range consumer2.Receiver {
-			if err := processMessage(msg); err != nil {
-				log.Println("Error: ", err.Error())
-			}
-		}
-	}()
+	// register consumers
+	client.RegisterConsumers(consumers...)
 
 	log.Println("[*] Waiting for messages. To exit press CTRL+C")
 	<-exit
