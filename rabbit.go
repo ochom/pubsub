@@ -116,6 +116,7 @@ func (c *Client) Consume() {
 		case consumer := <-c.consumers:
 			go c.consume(ch, consumer)
 		case <-c.exit:
+			c.consumers = make(chan *Consumer)
 			ch.Close()
 			conn.Close()
 			return
