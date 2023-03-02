@@ -33,7 +33,7 @@ func main() {
 
 	workers := 5
 	for i := 0; i < workers; i++ {
-		go consumer.Consume()
+		go consumer.Consume(i)
 	}
 
 	log.Println("[*] Waiting for messages. To exit press CTRL+C")
