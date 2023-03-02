@@ -34,30 +34,11 @@ func main() {
 
 	fmt.Printf("message will be published after %d ms\n", actualDelay.Milliseconds())
 
-	client := pubsub.NewClient(rabbitURL)
+	publisher := pubsub.NewPublisherWithDelay(rabbitURL, "test-exchange", "test-queue", actualDelay)
 
 	for i := 0; i < 20; i++ {
-		cnt := &pubsub.Content{
-			ExchangeName: "test-exchange",
-			QueueName:    "test-queue",
-			Body:         []byte(fmt.Sprintf("test-queue %s %d", message, i)),
-			Delay:        actualDelay,
-		}
-
-		if err := client.Publish(cnt); err != nil {
-			log.Fatalf("Failed to publish a message: %s", err)
-		}
-	}
-
-	for i := 0; i < 20; i++ {
-		cnt := &pubsub.Content{
-			ExchangeName: "test-exchange",
-			QueueName:    "test-queue2",
-			Body:         []byte(fmt.Sprintf("test-queue2 %s %d", message, i)),
-			Delay:        actualDelay,
-		}
-
-		if err := client.Publish(cnt); err != nil {
+		msg := []byte(fmt.Sprintf("test-queue %s %d", message, i))
+		if err := publisher.Publish(msg); err != nil {
 			log.Fatalf("Failed to publish a message: %s", err)
 		}
 	}
