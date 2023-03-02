@@ -108,7 +108,7 @@ func (c *Client) RegisterConsumers(consumers ...*Consumer) {
 func (c *Client) Consume() {
 	conn, ch, err := initQ(c.connectionURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("initQ: %s", err.Error())
 	}
 
 	for {
@@ -117,8 +117,14 @@ func (c *Client) Consume() {
 			go c.consume(ch, consumer)
 		case <-c.exit:
 			c.consumers = make(chan *Consumer)
-			ch.Close()
-			conn.Close()
+			if err := ch.Close(); err != nil {
+				log.Fatalf("channel Close: %s", err.Error())
+			}
+
+			if err := conn.Close(); err != nil {
+				log.Fatalf("connection Close: %s", err.Error())
+			}
+
 			return
 		}
 	}
@@ -127,7 +133,7 @@ func (c *Client) Consume() {
 func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
 	err := c.initPubSub(ch, consumer.ExchangeName, consumer.QueueName)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("initPubSub: %s", err.Error())
 	}
 
 	msgs, err := ch.Consume(
@@ -141,7 +147,7 @@ func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("consume: %s", err.Error())
 	}
 
 	// create workers
