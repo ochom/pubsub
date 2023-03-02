@@ -1,28 +1,24 @@
 package pubsub
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 // ConsumerHandler is a function that handles the jobs
-type ConsumerHandler func(workerID int, jobs chan []byte)
+type ConsumerHandler func(msg []byte) error
 
 // Consumer ...
 type Consumer struct {
 	url      string
 	exchange string
 	queue    string
-	autoAck  bool
-	workers  int
 	handler  ConsumerHandler
 }
 
 // NewConsumer ...
-func NewConsumer(rabbitURL, exchangeName, queueName string, autoAck bool, workers int, handler ConsumerHandler) *Consumer {
-	return &Consumer{rabbitURL, exchangeName, queueName, autoAck, workers, handler}
-}
-
-// NewAutoAckConsumer ...
-func NewAutoAckConsumer(rabbitURL, exchangeName, queueName string, workers int, handler ConsumerHandler) *Consumer {
-	return &Consumer{rabbitURL, exchangeName, queueName, true, workers, handler}
+func NewConsumer(rabbitURL, exchangeName, queueName string, handler ConsumerHandler) *Consumer {
+	return &Consumer{rabbitURL, exchangeName, queueName, handler}
 }
 
 // Consume consume messages from the channels
@@ -40,29 +36,39 @@ func (c *Consumer) Consume() error {
 	}
 
 	msgs, err := ch.Consume(
-		c.queue,   // queue
-		"",        // consumer
-		c.autoAck, // auto-ack
-		false,     // exclusive
-		false,     // no-local
-		false,     // no-wait
-		nil,       // args
+		c.queue, // queue
+		"",      // consumer
+		false,   // auto-ack
+		false,   // exclusive
+		false,   // no-local
+		false,   // no-wait
+		nil,     // args
 	)
 
 	if err != nil {
 		return fmt.Errorf("failed to register a consumer: %s", err.Error())
 	}
 
-	// create a receiver jobs channel
-	jobs := make(chan []byte)
-
-	for i := 0; i < c.workers; i++ {
-		go c.handler(i, jobs)
-	}
-
 	// consume messages
 	for msg := range msgs {
-		jobs <- msg.Body
+		if err := c.handler(msg.Body); err != nil {
+			// re-queue the message
+			if err := msg.Nack(false, true); err != nil {
+				log.Println("failed to re-queue a message")
+				continue
+			}
+
+			log.Println("message re-queued")
+			continue
+		}
+
+		// ack the message
+		if err := msg.Ack(false); err != nil {
+			log.Println("failed to ack a message")
+			continue
+		}
+
+		log.Println("message de-queued")
 	}
 
 	return nil
