@@ -2,8 +2,6 @@ package pubsub
 
 import (
 	"fmt"
-	"log"
-	"os"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -11,8 +9,6 @@ import (
 // Client ...
 type Client struct {
 	connectionURL string
-	consumers     chan *Consumer
-	exit          chan os.Signal
 }
 
 // NewClient ...
@@ -23,7 +19,6 @@ func NewClient(url string) *Client {
 
 	return &Client{
 		connectionURL: url,
-		consumers:     make(chan *Consumer),
 	}
 }
 
@@ -46,7 +41,7 @@ func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
 	return conn, ch, nil
 }
 
-func (c *Client) initPubSub(ch *amqp.Channel, exchangeName, queueName string) error {
+func initPubSub(ch *amqp.Channel, exchangeName, queueName string) error {
 	// declare exchange
 	args := make(amqp.Table)
 	args["x-delayed-type"] = "direct"
@@ -89,82 +84,4 @@ func (c *Client) initPubSub(ch *amqp.Channel, exchangeName, queueName string) er
 	}
 
 	return nil
-}
-
-// WithExit ..
-func (c *Client) WithExit(exit chan os.Signal) *Client {
-	c.exit = exit
-	return c
-}
-
-// RegisterConsumers ..
-func (c *Client) RegisterConsumers(consumers ...*Consumer) {
-	for _, consumer := range consumers {
-		c.consumers <- consumer
-	}
-}
-
-// Consume ...
-func (c *Client) Consume() {
-	conn, ch, err := initQ(c.connectionURL)
-	if err != nil {
-		log.Fatalf("initQ: %s", err.Error())
-	}
-
-	closeChannels := func() {
-		c.consumers = make(chan *Consumer)
-
-		if err := ch.Close(); err != nil {
-			log.Fatalf("channel Close: %s", err.Error())
-		}
-
-		if err := conn.Close(); err != nil {
-			log.Fatalf("connection Close: %s", err.Error())
-		}
-	}
-
-	for {
-		select {
-		case consumer := <-c.consumers:
-			go c.consume(ch, consumer)
-		case <-c.exit:
-			closeChannels()
-		default:
-			closeChannels()
-		}
-	}
-}
-
-func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
-	err := c.initPubSub(ch, consumer.ExchangeName, consumer.QueueName)
-	if err != nil {
-		log.Fatalf("initPubSub: %s", err.Error())
-	}
-
-	msgs, err := ch.Consume(
-		consumer.QueueName, // queue
-		"",                 // consumer
-		consumer.AutoAck,   // auto-ack
-		false,              // exclusive
-		false,              // no-local
-		false,              // no-wait
-		nil,                // args
-	)
-
-	if err != nil {
-		log.Fatalf("consume: %s", err.Error())
-		return
-	}
-
-	// create workers
-	receiver := make(chan []byte)
-
-	for i := 0; i < consumer.Workers; i++ {
-		go consumer.Handler(i, receiver)
-	}
-
-	// consume messages
-	for msg := range msgs {
-		receiver <- msg.Body
-	}
 }
