@@ -68,7 +68,6 @@ func (c *Consumer) Consume() error {
 			continue
 		}
 
-		log.Println("message de-queued")
 	}
 
 	return nil
