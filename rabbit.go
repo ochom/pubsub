@@ -111,21 +111,26 @@ func (c *Client) Consume() {
 		log.Fatalf("initQ: %s", err.Error())
 	}
 
+	closeChannels := func() {
+		c.consumers = make(chan *Consumer)
+
+		if err := ch.Close(); err != nil {
+			log.Fatalf("channel Close: %s", err.Error())
+		}
+
+		if err := conn.Close(); err != nil {
+			log.Fatalf("connection Close: %s", err.Error())
+		}
+	}
+
 	for {
 		select {
 		case consumer := <-c.consumers:
 			go c.consume(ch, consumer)
 		case <-c.exit:
-			c.consumers = make(chan *Consumer)
-			if err := ch.Close(); err != nil {
-				log.Fatalf("channel Close: %s", err.Error())
-			}
-
-			if err := conn.Close(); err != nil {
-				log.Fatalf("connection Close: %s", err.Error())
-			}
-
-			return
+			closeChannels()
+		default:
+			closeChannels()
 		}
 	}
 }
@@ -148,6 +153,7 @@ func (c *Client) consume(ch *amqp.Channel, consumer *Consumer) {
 
 	if err != nil {
 		log.Fatalf("consume: %s", err.Error())
+		return
 	}
 
 	// create workers
