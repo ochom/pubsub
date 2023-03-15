@@ -17,7 +17,7 @@ func randomInt(min, max int) int {
 func processMessage() pubsub.ConsumerHandler {
 	return func(msg []byte) error {
 		randomInt := randomInt(1, 10)
-		if randomInt%2 == 0 {
+		if randomInt%3 == 0 {
 			return fmt.Errorf("failed to process a message")
 		}
 
