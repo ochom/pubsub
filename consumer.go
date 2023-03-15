@@ -18,7 +18,7 @@ type Consumer struct {
 
 // NewConsumer ...
 func NewConsumer(rabbitURL, queueName string, handler ConsumerHandler) *Consumer {
-	exchange := fmt.Sprintf("delayed-%s", queueName)
+	exchange := fmt.Sprintf("%s-exchange", queueName)
 	return &Consumer{rabbitURL, exchange, queueName, handler}
 }
 

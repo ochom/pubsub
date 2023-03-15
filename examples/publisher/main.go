@@ -37,7 +37,7 @@ func main() {
 	publisher := pubsub.NewPublisherWithDelay(rabbitURL, "test-queue", actualDelay)
 
 	for i := 0; i < 20; i++ {
-		msg := []byte(fmt.Sprintf("test-queue %s %d", message, i))
+		msg := []byte(message)
 		if err := publisher.Publish(msg); err != nil {
 			log.Fatalf("Failed to publish a message: %s", err)
 		}

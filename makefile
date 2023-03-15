@@ -7,12 +7,10 @@ build:
 
 pub:
 	@echo "Running publisher ..."
-	@make dist
 	@./dist/pub
 
 sub:
 	@echo "Running consumer ..."
-	@make dist
 	@./dist/sub
 
 lint:

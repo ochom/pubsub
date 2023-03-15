@@ -18,7 +18,7 @@ type Publisher struct {
 
 // NewPublisher ...
 func NewPublisher(rabbitURL, queueName string) *Publisher {
-	exchange := fmt.Sprintf("delayed-%s", queueName)
+	exchange := fmt.Sprintf("%s-exchange", queueName)
 	return &Publisher{rabbitURL, exchange, queueName, 0}
 }
 
