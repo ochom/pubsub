@@ -17,8 +17,9 @@ type Consumer struct {
 }
 
 // NewConsumer ...
-func NewConsumer(rabbitURL, exchangeName, queueName string, handler ConsumerHandler) *Consumer {
-	return &Consumer{rabbitURL, exchangeName, queueName, handler}
+func NewConsumer(rabbitURL, queueName string, handler ConsumerHandler) *Consumer {
+	exchange := fmt.Sprintf("delayed-%s", queueName)
+	return &Consumer{rabbitURL, exchange, queueName, handler}
 }
 
 // Consume consume messages from the channels

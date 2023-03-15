@@ -34,7 +34,7 @@ func main() {
 
 	fmt.Printf("message will be published after %d ms\n", actualDelay.Milliseconds())
 
-	publisher := pubsub.NewPublisherWithDelay(rabbitURL, "test-exchange", "test-queue", actualDelay)
+	publisher := pubsub.NewPublisherWithDelay(rabbitURL, "test-queue", actualDelay)
 
 	for i := 0; i < 20; i++ {
 		msg := []byte(fmt.Sprintf("test-queue %s %d", message, i))

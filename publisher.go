@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -16,13 +17,16 @@ type Publisher struct {
 }
 
 // NewPublisher ...
-func NewPublisher(rabbitURL, exchangeName, queueName string) *Publisher {
-	return &Publisher{rabbitURL, exchangeName, queueName, 0}
+func NewPublisher(rabbitURL, queueName string) *Publisher {
+	exchange := fmt.Sprintf("delayed-%s", queueName)
+	return &Publisher{rabbitURL, exchange, queueName, 0}
 }
 
 // NewPublisherWithDelay ...
-func NewPublisherWithDelay(rabbitURL, exchangeName, queueName string, delay time.Duration) *Publisher {
-	return &Publisher{rabbitURL, exchangeName, queueName, delay}
+func NewPublisherWithDelay(rabbitURL, queueName string, delay time.Duration) *Publisher {
+	p := NewPublisher(rabbitURL, queueName)
+	p.delay = delay
+	return p
 }
 
 // Publish ...
