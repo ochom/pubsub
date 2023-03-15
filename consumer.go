@@ -22,6 +22,11 @@ func NewConsumer(rabbitURL, queueName string, handler ConsumerHandler) *Consumer
 	return &Consumer{rabbitURL, exchange, queueName, handler}
 }
 
+// GetQueueName ...
+func (c *Consumer) GetQueueName() string {
+	return c.queue
+}
+
 // Consume consume messages from the channels
 func (c *Consumer) Consume(workerID int) error {
 	conn, ch, err := initQ(c.url)

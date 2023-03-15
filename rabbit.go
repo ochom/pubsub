@@ -6,22 +6,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// Client ...
-type Client struct {
-	connectionURL string
-}
-
-// NewClient ...
-func NewClient(url string) *Client {
-	if url == "" {
-		url = "amqp://guest:guest@localhost:5672/"
-	}
-
-	return &Client{
-		connectionURL: url,
-	}
-}
-
 func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
