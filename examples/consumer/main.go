@@ -17,7 +17,7 @@ func randomInt(min, max int) int {
 func processMessage() pubsub.ConsumerHandler {
 	return func(msg []byte) error {
 		randomInt := randomInt(1, 10)
-		if randomInt%2 == 0 {
+		if randomInt%3 == 0 {
 			return fmt.Errorf("failed to process a message")
 		}
 
@@ -29,7 +29,7 @@ func processMessage() pubsub.ConsumerHandler {
 func main() {
 
 	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
-	consumer := pubsub.NewConsumer(rabbitURL, "test-exchange", "test-queue", processMessage())
+	consumer := pubsub.NewConsumer(rabbitURL, "test-queue", processMessage())
 
 	workers := 5
 	for i := 0; i < workers; i++ {
