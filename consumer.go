@@ -40,14 +40,14 @@ func (c *Consumer) GetWorkers() int {
 func (c *Consumer) Consume(workerID int) error {
 	conn, ch, err := initQ(c.url)
 	if err != nil {
-		return fmt.Errorf("[%s] worker [%d] failed to initialize a connection: %s", c.queue, workerID, err.Error())
+		return fmt.Errorf("failed to initialize a connection: %s", err.Error())
 	}
 
 	defer ch.Close()
 	defer conn.Close()
 
 	if err := initPubSub(ch, c.exchange, c.queue); err != nil {
-		return fmt.Errorf("[%s] worker [%d] failed to initialize a pubsub: %s", c.queue, workerID, err.Error())
+		return fmt.Errorf("failed to initialize a pubsub: %s", err.Error())
 	}
 
 	msgs, err := ch.Consume(
@@ -61,7 +61,7 @@ func (c *Consumer) Consume(workerID int) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("[%s] worker [%d] failed to consume messages: %s", c.queue, workerID, err.Error())
+		return fmt.Errorf("failed to consume messages: %s", err.Error())
 	}
 
 	// consume messages
