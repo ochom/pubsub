@@ -14,17 +14,26 @@ type Consumer struct {
 	exchange string
 	queue    string
 	handler  ConsumerHandler
+	workers  int
 }
 
 // NewConsumer ...
-func NewConsumer(rabbitURL, queueName string, handler ConsumerHandler) *Consumer {
+func NewConsumer(rabbitURL, queueName string, handler ConsumerHandler, workers int) *Consumer {
 	exchange := fmt.Sprintf("%s-exchange", queueName)
-	return &Consumer{rabbitURL, exchange, queueName, handler}
+	if workers <= 0 {
+		workers = 1
+	}
+	return &Consumer{rabbitURL, exchange, queueName, handler, workers}
 }
 
 // GetQueueName ...
 func (c *Consumer) GetQueueName() string {
 	return c.queue
+}
+
+// GetWorkers ...
+func (c *Consumer) GetWorkers() int {
+	return c.workers
 }
 
 // Consume consume messages from the channels

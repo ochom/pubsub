@@ -29,10 +29,9 @@ func processMessage() pubsub.ConsumerHandler {
 func main() {
 
 	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
-	consumer := pubsub.NewConsumer(rabbitURL, "test-queue", processMessage())
+	consumer := pubsub.NewConsumer(rabbitURL, "test-queue", processMessage(), 5)
 
-	workers := 5
-	for i := 0; i < workers; i++ {
+	for i := 0; i < consumer.GetWorkers(); i++ {
 		go consumer.Consume(i)
 	}
 
