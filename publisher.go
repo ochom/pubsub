@@ -13,24 +13,26 @@ type Publisher struct {
 	url      string
 	exchange string
 	queue    string
-	delay    time.Duration
 }
 
 // NewPublisher ...
 func NewPublisher(rabbitURL, queueName string) *Publisher {
 	exchange := fmt.Sprintf("%s-exchange", queueName)
-	return &Publisher{rabbitURL, exchange, queueName, 0}
+	return &Publisher{rabbitURL, exchange, queueName}
 }
 
-// NewPublisherWithDelay ...
-func NewPublisherWithDelay(rabbitURL, queueName string, delay time.Duration) *Publisher {
-	p := NewPublisher(rabbitURL, queueName)
-	p.delay = delay
-	return p
+// PublishWithDelay ...
+func (p *Publisher) PublishWithDelay(body []byte, delay time.Duration) error {
+	return p.publish(body, delay)
 }
 
 // Publish ...
 func (p *Publisher) Publish(body []byte) error {
+	return p.publish(body, 0)
+}
+
+// Publish ...
+func (p *Publisher) publish(body []byte, delay time.Duration) error {
 	conn, ch, err := initQ(p.url)
 	if err != nil {
 		return err
@@ -44,7 +46,7 @@ func (p *Publisher) Publish(body []byte) error {
 	}
 
 	headers := map[string]any{
-		"x-delay": p.delay.Milliseconds(),
+		"x-delay": delay.Milliseconds(),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

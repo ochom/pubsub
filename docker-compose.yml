@@ -1,7 +1,7 @@
 version: "3.7"
 services:
-  pubsub:
-    container_name: pubsub
+  rabbitmq:
+    container_name: rabbitmq
     build: .
     restart: always
     ports:

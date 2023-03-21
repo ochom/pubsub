@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"fmt"
+	"log"
 )
 
 // Consumer ...
@@ -52,9 +53,11 @@ func (c *Consumer) Consume() (<-chan []byte, error) {
 
 	deliveries := make(chan []byte)
 	go func() {
-		defer close(deliveries)
 		for msg := range msgs {
-			deliveries <- msg.Body
+			delivery := msg.Body
+			log.Println("Received a message: ", string(delivery))
+			deliveries <- delivery
+			log.Println("Done processing a message: ", string(delivery))
 		}
 	}()
 

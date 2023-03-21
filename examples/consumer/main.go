@@ -34,7 +34,6 @@ func main() {
 	}
 
 	log.Println("[*] Waiting for messages. To exit press CTRL+C")
-
 	wait := make(chan os.Signal, 1)
 	<-wait
 }
