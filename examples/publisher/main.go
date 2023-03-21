@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ochom/pubsub"
-	"github.com/ochom/pubsub/examples"
 )
 
 func fromArgs(args []string) (string, int) {
@@ -32,12 +31,11 @@ func main() {
 
 	message, delay := fromArgs(os.Args)
 
-	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
-
 	actualDelay := time.Duration(time.Second * time.Duration(delay))
 
 	fmt.Printf("message will be published after %d ms\n", actualDelay.Milliseconds())
 
+	rabbitURL := "amqp://admin:admin2020@localhost:5672/"
 	p := pubsub.NewPublisher(rabbitURL, "test-queue")
 
 	wg := sync.WaitGroup{}

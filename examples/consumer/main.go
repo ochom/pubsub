@@ -6,12 +6,11 @@ import (
 	"os/signal"
 
 	"github.com/ochom/pubsub"
-	"github.com/ochom/pubsub/examples"
 )
 
 func main() {
 
-	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
+	rabbitURL := "amqp://admin:admin2020@localhost:5672/"
 	consumer := pubsub.NewConsumer(rabbitURL, "test-queue")
 
 	workerFunc := func(d []byte) {
