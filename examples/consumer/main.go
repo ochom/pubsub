@@ -14,25 +14,34 @@ func randomInt(min, max int) int {
 	return min + rand.Intn(max-min)
 }
 
-func processMessage() pubsub.ConsumerHandler {
-	return func(msg []byte) error {
-		randomInt := randomInt(1, 10)
-		if randomInt%3 == 0 {
-			return fmt.Errorf("failed to process a message")
-		}
-
-		log.Printf("Received a message: %s", string(msg))
-		return nil
+func processMessage(msg []byte) error {
+	randomInt := randomInt(1, 10)
+	if randomInt%3 == 0 {
+		return fmt.Errorf("failed to process a message")
 	}
+
+	log.Printf("Received a message: %s", string(msg))
+	return nil
 }
 
 func main() {
 
 	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
-	consumer := pubsub.NewConsumer(rabbitURL, "test-queue", processMessage(), 5)
+	consumer := pubsub.NewConsumer(rabbitURL, "test-queue")
 
-	for i := 0; i < consumer.GetWorkers(); i++ {
-		go consumer.Consume(i)
+	msgs, err := consumer.Consume()
+	if err != nil {
+		log.Fatalf("failed to consume messages: %s", err.Error())
+	}
+
+	for i := 0; i < 5; i++ {
+		go func(workerID int) {
+			for msg := range msgs {
+				if err := processMessage(msg); err != nil {
+					log.Printf("failed to process a message: %s", err.Error())
+				}
+			}
+		}(i)
 	}
 
 	log.Println("[*] Waiting for messages. To exit press CTRL+C")
