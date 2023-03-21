@@ -2,7 +2,6 @@ package pubsub
 
 import (
 	"fmt"
-	"log"
 )
 
 // Consumer ...
@@ -24,7 +23,7 @@ func (c *Consumer) GetQueueName() string {
 }
 
 // Consume consume messages from the channels
-func (c *Consumer) Consume() (<-chan []byte, error) {
+func (c *Consumer) Consume() (chan []byte, error) {
 	conn, ch, err := initQ(c.url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize a connection: %s", err.Error())
@@ -37,7 +36,7 @@ func (c *Consumer) Consume() (<-chan []byte, error) {
 		return nil, fmt.Errorf("failed to initialize a pubsub: %s", err.Error())
 	}
 
-	msgs, err := ch.Consume(
+	deliveries, err := ch.Consume(
 		c.queue, // queue
 		"",      // consumer
 		true,    // auto-ack
@@ -51,15 +50,17 @@ func (c *Consumer) Consume() (<-chan []byte, error) {
 		return nil, fmt.Errorf("failed to consume messages: %s", err.Error())
 	}
 
-	deliveries := make(chan []byte)
+	// Create a new channel to send message bodies
+	bodyCh := make(chan []byte)
+
+	// Start a separate goroutine to send message bodies to the channel
 	go func() {
-		for msg := range msgs {
-			delivery := msg.Body
-			log.Println("Received a message: ", string(delivery))
-			deliveries <- delivery
-			log.Println("Done processing a message: ", string(delivery))
+		defer close(bodyCh)
+		for d := range deliveries {
+			bodyCh <- d.Body
 		}
 	}()
 
-	return deliveries, nil
+	// Return the channel to the caller
+	return bodyCh, nil
 }
