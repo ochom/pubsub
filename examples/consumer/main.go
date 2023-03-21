@@ -24,12 +24,11 @@ func main() {
 		}
 	}()
 
-	// Use a buffered channel with capacity 1
-	stopCh := make(chan os.Signal, 1)
-	signal.Notify(stopCh, os.Interrupt)
-
 	log.Println("Waiting for messages. To exit press CTRL+C")
 
-	// Wait for a message on the stopCh channel
-	<-stopCh
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt)
+
+	// Wait for a message on the exit channel
+	<-exit
 }

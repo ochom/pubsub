@@ -1,6 +1,5 @@
 SHELL=/bin/bash
 
-
 pub:
 	@echo "Running publisher ..."
 	@./dist/pub
