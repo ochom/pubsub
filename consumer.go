@@ -50,11 +50,11 @@ func (c *Consumer) Consume() (<-chan []byte, error) {
 		return nil, fmt.Errorf("failed to consume messages: %s", err.Error())
 	}
 
-	deliveries := make(chan []byte)
+	deliveries := make(chan []byte, 10)
+
 	go func() {
-		defer close(deliveries)
-		for msg := range msgs {
-			deliveries <- msg.Body
+		for d := range msgs {
+			deliveries <- d.Body
 		}
 	}()
 
