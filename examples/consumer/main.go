@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/ochom/pubsub"
 	"github.com/ochom/pubsub/examples"
@@ -15,19 +14,13 @@ func main() {
 	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
 	consumer := pubsub.NewConsumer(rabbitURL, "test-queue")
 
-	bodyCh, err := consumer.Consume()
-	if err != nil {
-		log.Fatalf("failed to consume messages: %s", err.Error())
+	workerFunc := func(d []byte) {
+		log.Printf("Received message: %s", string(d))
 	}
 
 	go func() {
-		for msg := range bodyCh {
-			log.Printf("Received a message: %s", string(msg))
-			// Why is no message logged here?
-
-			// If you add a sleep here, the message will be logged
-			time.Sleep(1 * time.Second)
-
+		if err := consumer.Consume(workerFunc); err != nil {
+			log.Fatalf("Failed to consume messages: %s", err.Error())
 		}
 	}()
 

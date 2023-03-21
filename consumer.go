@@ -23,17 +23,17 @@ func (c *Consumer) GetQueueName() string {
 }
 
 // Consume consume messages from the channels
-func (c *Consumer) Consume() (chan []byte, error) {
+func (c *Consumer) Consume(workerFunc func([]byte)) error {
 	conn, ch, err := initQ(c.url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize a connection: %s", err.Error())
+		return fmt.Errorf("failed to initialize a connection: %s", err.Error())
 	}
 
 	defer ch.Close()
 	defer conn.Close()
 
 	if err := initPubSub(ch, c.exchange, c.queue); err != nil {
-		return nil, fmt.Errorf("failed to initialize a pubsub: %s", err.Error())
+		return fmt.Errorf("failed to initialize a pubsub: %s", err.Error())
 	}
 
 	deliveries, err := ch.Consume(
@@ -47,20 +47,12 @@ func (c *Consumer) Consume() (chan []byte, error) {
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to consume messages: %s", err.Error())
+		return fmt.Errorf("failed to consume messages: %s", err.Error())
 	}
 
-	// Create a new channel to send message bodies
-	bodyCh := make(chan []byte)
+	for d := range deliveries {
+		workerFunc(d.Body)
+	}
 
-	// Start a separate goroutine to send message bodies to the channel
-	go func() {
-		defer close(bodyCh)
-		for d := range deliveries {
-			bodyCh <- d.Body
-		}
-	}()
-
-	// Return the channel to the caller
-	return bodyCh, nil
+	return nil
 }
