@@ -1,42 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"math/rand"
 	"os"
+	"os/signal"
 
 	"github.com/ochom/pubsub"
-	"github.com/ochom/pubsub/examples"
 )
-
-func randomInt(min, max int) int {
-	return min + rand.Intn(max-min)
-}
-
-func processMessage() pubsub.ConsumerHandler {
-	return func(msg []byte) error {
-		randomInt := randomInt(1, 10)
-		if randomInt%3 == 0 {
-			return fmt.Errorf("failed to process a message")
-		}
-
-		log.Printf("Received a message: %s", string(msg))
-		return nil
-	}
-}
 
 func main() {
 
-	rabbitURL := examples.GetEnv("RABBIT_URL", "amqp://guest:guest@localhost:5672/")
-	consumer := pubsub.NewConsumer(rabbitURL, "test-queue", processMessage(), 5)
+	rabbitURL := "amqp://admin:admin2020@localhost:5672/"
+	consumer := pubsub.NewConsumer(rabbitURL, "test-queue")
 
-	for i := 0; i < consumer.GetWorkers(); i++ {
-		go consumer.Consume(i)
+	workerFunc := func(d []byte) {
+		log.Printf("Received message: %s", string(d))
 	}
 
-	log.Println("[*] Waiting for messages. To exit press CTRL+C")
+	go func() {
+		if err := consumer.Consume(workerFunc); err != nil {
+			log.Fatalf("Failed to consume messages: %s", err.Error())
+		}
+	}()
 
-	wait := make(chan os.Signal, 1)
-	<-wait
+	log.Println("Waiting for messages. To exit press CTRL+C")
+
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt)
+
+	// Wait for a message on the exit channel
+	<-exit
 }
