@@ -1,25 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"math/rand"
 	"os"
 
 	"github.com/ochom/pubsub"
 	"github.com/ochom/pubsub/examples"
 )
 
-func randomInt(min, max int) int {
-	return min + rand.Intn(max-min)
-}
-
 func processMessage(msg []byte) error {
-	randomInt := randomInt(1, 10)
-	if randomInt%3 == 0 {
-		return fmt.Errorf("failed to process a message")
-	}
-
 	log.Printf("Received a message: %s", string(msg))
 	return nil
 }

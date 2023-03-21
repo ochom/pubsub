@@ -39,7 +39,7 @@ func (c *Consumer) Consume() (<-chan []byte, error) {
 	msgs, err := ch.Consume(
 		c.queue, // queue
 		"",      // consumer
-		false,   // auto-ack
+		true,    // auto-ack
 		false,   // exclusive
 		false,   // no-local
 		false,   // no-wait
