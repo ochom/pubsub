@@ -39,7 +39,7 @@ func (c *Consumer) Consume(workerFunc func([]byte), isLazy bool) error {
 	deliveries, err := ch.Consume(
 		c.queue, // queue
 		"",      // consumer
-		false,   // auto-ack
+		true,    // auto-ack
 		false,   // exclusive
 		false,   // no-local
 		false,   // no-wait
@@ -52,7 +52,6 @@ func (c *Consumer) Consume(workerFunc func([]byte), isLazy bool) error {
 
 	for d := range deliveries {
 		workerFunc(d.Body)
-		d.Ack(false)
 	}
 
 	return nil
