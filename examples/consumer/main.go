@@ -18,7 +18,7 @@ func main() {
 	}
 
 	go func() {
-		if err := consumer.Consume(workerFunc); err != nil {
+		if err := consumer.Consume(workerFunc, true); err != nil {
 			log.Fatalf("Failed to consume messages: %s", err.Error())
 		}
 	}()

@@ -43,7 +43,11 @@ func main() {
 	for i := 0; i < 20; i++ {
 		go func() {
 			defer wg.Done()
-			if err := p.PublishWithDelay([]byte(message), actualDelay); err != nil {
+			// if err := p.PublishWithDelay([]byte(message), actualDelay); err != nil {
+			// 	log.Fatalf("Failed to publish a message: %s", err)
+			// }
+
+			if err := p.Publish([]byte(message)); err != nil {
 				log.Fatalf("Failed to publish a message: %s", err)
 			}
 		}()

@@ -23,16 +23,16 @@ func NewPublisher(rabbitURL, queueName string) *Publisher {
 
 // PublishWithDelay ...
 func (p *Publisher) PublishWithDelay(body []byte, delay time.Duration) error {
-	return p.publish(body, delay)
+	return p.publish(body, delay, false)
 }
 
 // Publish ...
 func (p *Publisher) Publish(body []byte) error {
-	return p.publish(body, 0)
+	return p.publish(body, 0, true)
 }
 
 // Publish ...
-func (p *Publisher) publish(body []byte, delay time.Duration) error {
+func (p *Publisher) publish(body []byte, delay time.Duration, isLazy bool) error {
 	conn, ch, err := initQ(p.url)
 	if err != nil {
 		return err
@@ -41,12 +41,16 @@ func (p *Publisher) publish(body []byte, delay time.Duration) error {
 	defer ch.Close()
 	defer conn.Close()
 
-	if err := initPubSub(ch, p.exchange, p.queue); err != nil {
-		return err
-	}
-
-	headers := map[string]any{
-		"x-delay": delay.Milliseconds(),
+	headers := map[string]any{}
+	if isLazy {
+		if err := initLazy(ch, p.exchange, p.queue); err != nil {
+			return err
+		}
+	} else {
+		if err := initDelayed(ch, p.exchange, p.queue); err != nil {
+			return err
+		}
+		headers["x-delay"] = delay.Milliseconds()
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

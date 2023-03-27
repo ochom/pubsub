@@ -18,23 +18,28 @@ func NewConsumer(rabbitURL, queueName string) *Consumer {
 }
 
 // Consume consume messages from the channels
-func (c *Consumer) Consume(workerFunc func([]byte)) error {
+func (c *Consumer) Consume(workerFunc func([]byte), isLazy bool) error {
 	conn, ch, err := initQ(c.url)
 	if err != nil {
 		return fmt.Errorf("failed to initialize a connection: %s", err.Error())
 	}
-
 	defer ch.Close()
 	defer conn.Close()
 
-	if err := initPubSub(ch, c.exchange, c.queue); err != nil {
-		return fmt.Errorf("failed to initialize a pubsub: %s", err.Error())
+	if isLazy {
+		if err := initLazy(ch, c.exchange, c.queue); err != nil {
+			return fmt.Errorf("failed to initialize a lazy pubsub: %s", err.Error())
+		}
+	} else {
+		if err := initDelayed(ch, c.exchange, c.queue); err != nil {
+			return fmt.Errorf("failed to initialize a instant pubsub: %s", err.Error())
+		}
 	}
 
 	deliveries, err := ch.Consume(
 		c.queue, // queue
 		"",      // consumer
-		true,    // auto-ack
+		false,   // auto-ack
 		false,   // exclusive
 		false,   // no-local
 		false,   // no-wait
@@ -47,6 +52,7 @@ func (c *Consumer) Consume(workerFunc func([]byte)) error {
 
 	for d := range deliveries {
 		workerFunc(d.Body)
+		d.Ack(false)
 	}
 
 	return nil
