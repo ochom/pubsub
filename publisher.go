@@ -59,7 +59,7 @@ func (p *Publisher) publish(body []byte, delay time.Duration) error {
 			Body:         body,
 			DeliveryMode: amqp.Persistent,
 			Headers: amqp.Table{
-				"x-delay": int64(delay),
+				"x-delay": delay.Milliseconds(),
 			},
 		},
 	)
