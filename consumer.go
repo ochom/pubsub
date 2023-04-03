@@ -23,7 +23,6 @@ func (c *Consumer) Consume(workerFunc func([]byte)) error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize a connection: %s", err.Error())
 	}
-
 	defer ch.Close()
 	defer conn.Close()
 

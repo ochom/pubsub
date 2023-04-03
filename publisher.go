@@ -45,10 +45,6 @@ func (p *Publisher) publish(body []byte, delay time.Duration) error {
 		return err
 	}
 
-	headers := map[string]any{
-		"x-delay": delay.Milliseconds(),
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -62,7 +58,9 @@ func (p *Publisher) publish(body []byte, delay time.Duration) error {
 			ContentType:  "application/json",
 			Body:         body,
 			DeliveryMode: amqp.Persistent,
-			Headers:      headers,
+			Headers: amqp.Table{
+				"x-delay": delay.Milliseconds(),
+			},
 		},
 	)
 

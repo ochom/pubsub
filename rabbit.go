@@ -25,10 +25,9 @@ func initQ(url string) (*amqp.Connection, *amqp.Channel, error) {
 	return conn, ch, nil
 }
 
+// initPubSub ...
 func initPubSub(ch *amqp.Channel, exchangeName, queueName string) error {
-	// declare exchange
-	args := make(amqp.Table)
-	args["x-delayed-type"] = "direct"
+
 	err := ch.ExchangeDeclare(
 		exchangeName,        // name
 		"x-delayed-message", // type
@@ -36,7 +35,9 @@ func initPubSub(ch *amqp.Channel, exchangeName, queueName string) error {
 		false,               // auto-deleted
 		false,               // internal
 		false,               // no-wait
-		args,                // arguments
+		amqp.Table{
+			"x-delayed-type": "direct",
+		}, // arguments
 	)
 	if err != nil {
 		return fmt.Errorf("exchange Declare: %s", err.Error())
