@@ -23,16 +23,16 @@ func NewPublisher(rabbitURL, queueName string) *Publisher {
 
 // PublishWithDelay ...
 func (p *Publisher) PublishWithDelay(body []byte, delay time.Duration) error {
-	return p.publish(body, delay, false)
+	return p.publish(body, delay)
 }
 
 // Publish ...
 func (p *Publisher) Publish(body []byte) error {
-	return p.publish(body, 0, true)
+	return p.publish(body, 0)
 }
 
 // Publish ...
-func (p *Publisher) publish(body []byte, delay time.Duration, isLazy bool) error {
+func (p *Publisher) publish(body []byte, delay time.Duration) error {
 	conn, ch, err := initQ(p.url)
 	if err != nil {
 		return err
@@ -41,16 +41,8 @@ func (p *Publisher) publish(body []byte, delay time.Duration, isLazy bool) error
 	defer ch.Close()
 	defer conn.Close()
 
-	headers := map[string]any{}
-	if isLazy {
-		if err := initLazy(ch, p.exchange, p.queue); err != nil {
-			return err
-		}
-	} else {
-		if err := initDelayed(ch, p.exchange, p.queue); err != nil {
-			return err
-		}
-		headers["x-delay"] = delay.Milliseconds()
+	if err := initPubSub(ch, p.exchange, p.queue); err != nil {
+		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -66,7 +58,9 @@ func (p *Publisher) publish(body []byte, delay time.Duration, isLazy bool) error
 			ContentType:  "application/json",
 			Body:         body,
 			DeliveryMode: amqp.Persistent,
-			Headers:      headers,
+			Headers: amqp.Table{
+				"x-delay": int64(delay),
+			},
 		},
 	)
 

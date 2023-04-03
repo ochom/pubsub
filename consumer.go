@@ -26,14 +26,8 @@ func (c *Consumer) Consume(workerFunc func([]byte), isLazy bool) error {
 	defer ch.Close()
 	defer conn.Close()
 
-	if isLazy {
-		if err := initLazy(ch, c.exchange, c.queue); err != nil {
-			return fmt.Errorf("failed to initialize a lazy pubsub: %s", err.Error())
-		}
-	} else {
-		if err := initDelayed(ch, c.exchange, c.queue); err != nil {
-			return fmt.Errorf("failed to initialize a instant pubsub: %s", err.Error())
-		}
+	if err := initPubSub(ch, c.exchange, c.queue); err != nil {
+		return fmt.Errorf("failed to initialize a pubsub: %s", err.Error())
 	}
 
 	deliveries, err := ch.Consume(
