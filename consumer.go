@@ -18,7 +18,7 @@ func NewConsumer(rabbitURL, queueName string) *Consumer {
 }
 
 // Consume consume messages from the channels
-func (c *Consumer) Consume(workerFunc func([]byte), isLazy bool) error {
+func (c *Consumer) Consume(workerFunc func([]byte)) error {
 	conn, ch, err := initQ(c.url)
 	if err != nil {
 		return fmt.Errorf("failed to initialize a connection: %s", err.Error())
