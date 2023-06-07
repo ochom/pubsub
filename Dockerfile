@@ -1,6 +1,9 @@
-FROM curlimages/curl:8.1.2 as Downloader
+FROM debian:bookworm-slim as Downloader
 
 WORKDIR /downloaded
+
+# Install curl
+RUN apt-get update && apt-get install -y curl
 
 # Get the rabbitmq_delayed_message_exchange plugin from github
 RUN curl -L -o ./rabbitmq_delayed_message_exchange-3.12.0.ez \
